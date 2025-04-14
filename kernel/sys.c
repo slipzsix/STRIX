@@ -1182,6 +1182,10 @@ static int override_release(char __user *release, size_t len)
 	return ret;
 }
 
+static uint64_t netbpfload_pid = 0;
+
+extern bool is_legacy_ebpf;
+
 #ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
 extern void susfs_spoof_uname(struct new_utsname* tmp);
 #endif
@@ -1192,13 +1196,14 @@ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
 	down_read(&uts_sem);
 	memcpy(&tmp, utsname(), sizeof(tmp));
 #ifdef CONFIG_ANDROID_SPOOF_KERNEL_VERSION_FOR_BPF
-	if (current_uid().val == 0 && 
-  	  (!strncmp(current->comm, "bpfloader", 9) ||
+	if (!is_legacy_ebpf) {
+ 	if (!strncmp(current->comm, "bpfloader", 9) ||
  	   !strncmp(current->comm, "netbpfload", 10) ||
- 	   !strncmp(current->comm, "netd", 4))) {
-	    strcpy(tmp.release, "5.4.186");
-		pr_info("fake uname: %s/%d release=%s\n",
-		current->comm, current->pid, tmp.release);
+ 	   !strncmp(current->comm, "netd", 4)) {
+ 	   strcpy(tmp.release, "5.4.186");
+ 	   pr_debug("fake uname: %s/%d release=%s\n",
+ 	   current->comm, current->pid, tmp.release);
+ 	  }
 	}
 #endif
 #ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
