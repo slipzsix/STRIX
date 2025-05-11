@@ -1,9 +1,9 @@
-name: build-kernel-miui
+name: sweet_kernel_miui 
 on:
   workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -17,37 +17,36 @@ jobs:
     - name: Install Dependencies
       run: |
            sudo apt-get update
-           sudo apt-get install -y glibc-source libghc-libyaml-dev libyaml-dev binutils-aarch64-linux-gnu \
-           binutils-arm-linux-gnueabi binutils device-tree-compiler libtfm-dev libelf-dev cpio kmod nano bc \
-           bison ca-certificates curl flex gcc git libc6-dev libssl-dev openssl python-is-python3 ssh wget \
-           zip zstd sudo make clang gcc-arm-linux-gnueabi software-properties-common build-essential \
-           libarchive-tools gcc-aarch64-linux-gnu python2
-                
-    - name: clone toolchains
+           sudo -E apt-get -y -qq install git make bc bison openssl dos2unix zip kmod cpio flex libelf-dev curl libssl-dev libtfm-dev wget device-tree-compiler ca-certificates python3 binutils binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+        
+    - name: Fetch Toolchains 
       run: |
-             git clone https://gitlab.com/LeCmnGend/proton-clang -b clang-15 --depth=1 clang
-#            mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
-#            git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 gcc64
-#            git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 gcc32
-            
-#    - name: clone KernelSU-Next
-#      run: |
-#           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-susfs-dev
-           
-    - name: Setting [MIUI] Dimensi
+            mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
+            mkdir gcc64
+            wget -O gcc-aarch64.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
+            tar -C gcc64/ -zxvf gcc-aarch64.tar.gz
+            mkdir gcc32
+            wget -O gcc-arm.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
+            tar -C gcc32/ -zxvf gcc-arm.tar.gz
+                
+    - name: Fetch SukiSU
+      run: |
+            curl -LSs "https://raw.githubusercontent.com/ShirkNeko/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
+                      
+    - name: Setting [MIUI] Display Dimensi
       run: |
             sed -i 's/qcom,mdss-pan-physical-width-dimension = <69>;$/qcom,mdss-pan-physical-width-dimension = <695>;/' arch/arm64/boot/dts/qcom/dsi-panel-k6-38-0c-0a-fhd-dsc-video.dtsi
             sed -i 's/qcom,mdss-pan-physical-height-dimension = <154>;$/qcom,mdss-pan-physical-height-dimension = <1546>;/' arch/arm64/boot/dts/qcom/dsi-panel-k6-38-0c-0a-fhd-dsc-video.dtsi
                  
-    - name: Build-Kernel
+    - name: build_kernol
       run: |
            export ARCH=arm64
            export PATH="${PWD}/clang/bin:${PWD}gcc64/bin:${PWD}gcc32/bin:${PATH}"
            export KBUILD_BUILD_USER=nobody
            export KBUILD_BUILD_HOST=android-build
            export KBUILD_COMPILER_STRING="${PWD}/clang"
-           make O=out ARCH=arm64 vendor/sweet_defconfig 
-           make -j$(nproc --all) O=out \ ARCH=arm64 \ LLVM=1 \ LLVM_IAS=1 \ AR=llvm-ar \ NM=llvm-nm \ LD=ld.lld \ OBJCOPY=llvm-objcopy \ OBJDUMP=llvm-objdump \ STRIP=llvm-strip \ CC=clang \ CROSS_COMPILE=aarch64-linux-gnu- \ CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+           make O=out vendor/sweet_defconfig 
+           make -j$(nproc --all) O=out \ ARCH=arm64 \ LLVM=1 \ LLVM_IAS=1 \ AR=llvm-ar \ NM=llvm-nm \ LD=ld.lld \ OBJCOPY=llvm-objcopy \ OBJDUMP=llvm-objdump \ STRIP=llvm-strip \ CLANG_TRIPLE=aarch64-linux-gnu- \ CROSS_COMPILE=aarch64-linux-android- \ CROSS_COMPILE_ARM32=arm-linux-androideabi-                          
            mv out/.config out/sweet_defconfig.txt
            
     - name: Upload defconfig 
@@ -55,20 +54,37 @@ jobs:
       with:
         name: defconfig-${{ env.BUILD_TIME }}
         path: out/sweet_defconfig.txt
-      
-    - name: Clone Anykernel3 + priper Image
+
+    - name: Fetch Anykernel3
       run: |
-           git clone --depth=1 https://github.com/Taufik-Daulay/AnyKernel3.git -b main AnyKernel3  
+            git clone --depth=1 https://github.com/kanger-303/AnyKernel3 -b strix AnyKernel3 
             cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/Image.gz-dtb
             cp out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
-#            cp out/arch/arm64/boot/dtb.img AnyKernel3/dtb.img
-                 
-    - name: Upload Image Kernel
+                    
+    - name: Upload Anykernel3
       uses: actions/upload-artifact@v4
       with:
-        name: STRIX-sweet-miui-personal-${{ env.BUILD_TIME }}
+        name: STRIX-MIUI-Personal-${{ env.BUILD_TIME }}
         path: AnyKernel3/*
 
+    - name: Upload Image
+      uses: actions/upload-artifact@v4
+      with:
+        name: Image
+        path: out/arch/arm64/boot/
+
+    
+
+
+    
+
+
+
+
+
+
+
+           
 
 
     
