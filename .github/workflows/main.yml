@@ -26,9 +26,9 @@ jobs:
             git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 gcc64
             git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 gcc32
                                     
-    - name: Fetch KernelSU-Next 
+    - name: Fetch SukiSU
       run: |
-            curl -LSs "https://raw.githubusercontent.com/zenkernol-dev/KernelSU-Next/next/kernel/setup.sh" | bash -s next
+            curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-dev
                                                          
     - name: Build
       run: |
