@@ -1606,6 +1606,16 @@ static int bpf_prog_detach(const union bpf_attr *attr)
 static int bpf_prog_query(const union bpf_attr *attr,
 			  union bpf_attr __user *uattr)
 {
+#ifdef CONFIG_ANDROID_SPOOF_BPF_QUERY_ONLY
+ /*
+  * For compatibility with legacy or diagnostic tools,
+  * spoof support for any attach_type during BPF_PROG_QUERY.
+  * Does NOT affect attach(), verifier, or program execution.
+  */
+ pr_info("Spoofing BPF_PROG_QUERY for attach_type=%d",
+  attr->query.attach_type);
+ return 0;
+#else
 	struct cgroup *cgrp;
 	int ret;
 
@@ -1647,6 +1657,7 @@ static int bpf_prog_query(const union bpf_attr *attr,
 	ret = cgroup_bpf_query(cgrp, attr, uattr);
 	cgroup_put(cgrp);
 	return ret;
+#endif /* CONFIG_ANDROID_SPOOF_BPF_QUERY_ONLY */
 }
 #endif /* CONFIG_CGROUP_BPF */
 
