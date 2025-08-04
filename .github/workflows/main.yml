@@ -28,7 +28,7 @@ jobs:
             
     - name: Fetch KernelSU-SuSFS
       run: |
-           curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s next-susfs-dev
+           curl -LSs "https://raw.githubusercontent.com/buildkernel1/KernelSU-Next/susfs/kernel/setup.sh" | bash -s susfs  
            
     - name: MIUI Dimensi
       run: |
@@ -68,7 +68,7 @@ jobs:
     - name: Upload Kernel
       uses: actions/upload-artifact@v4
       with:
-        name: STRIX-sweet-personal-miui-${{ env.BUILD_TIME }}
+        name: STRIX-personal-miui-${{ env.BUILD_TIME }}
         path: AnyKernel3/*
 
 
